@@ -1,0 +1,52 @@
+name: Import realtime restaurant POS benchmark
+
+on:
+  push:
+    paths:
+      - '.github/workflows/import-realtime-pos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Import source cleanly
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          git clone --depth 1 https://github.com/iono-such-things/restaurant-pos-system.git "$tmp/src"
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github -exec rm -rf {} +
+          cp -a "$tmp/src/." "$tmp/imported"
+          rm -rf "$tmp/imported/.git"
+          cp -a "$tmp/imported/." .
+
+          cat > BENCHMARK_SOURCE.md <<'EOF'
+          # Benchmark source
+
+          Source: https://github.com/iono-such-things/restaurant-pos-system
+
+          This repository is an isolated evaluation copy used to study restaurant POS architecture, UX and multi-role workflows.
+          The upstream project declares the MIT License.
+          EOF
+
+      - name: Commit imported benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "chore: import realtime restaurant POS benchmark"
+          git push origin HEAD:main
