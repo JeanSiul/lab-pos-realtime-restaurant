@@ -23,9 +23,14 @@ jobs:
           set -euo pipefail
           tmp="$(mktemp -d)"
           git clone --depth 1 https://github.com/iono-such-things/restaurant-pos-system.git "$tmp/src"
+
+          # Preserve this repo's Git metadata and our import workflow.
           find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github -exec rm -rf {} +
+          find .github -mindepth 1 -maxdepth 1 ! -name workflows -exec rm -rf {} + || true
+          find .github/workflows -mindepth 1 -maxdepth 1 ! -name import-realtime-pos.yml -exec rm -f {} + || true
+
           cp -a "$tmp/src/." "$tmp/imported"
-          rm -rf "$tmp/imported/.git"
+          rm -rf "$tmp/imported/.git" "$tmp/imported/.github"
           cp -a "$tmp/imported/." .
 
           cat > BENCHMARK_SOURCE.md <<'EOF'
